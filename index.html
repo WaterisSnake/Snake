@@ -1,0 +1,171 @@
+<canvas id="cnv"></canvas>
+<script>
+const
+	cnv = document.getElementById('cnv'),
+	ctx = cnv.getContext('2d'),
+	Snake = {
+		score: 0,
+		moved: true,
+		size: 1,
+		dir_now: 0,
+		direction: [
+			{x: -1, y: 0},
+			{x: 0, y: -1},
+			{x: 1, y: 0},
+			{x: 0, y: 1}
+		],
+		head: {
+			x: 12,
+			y: 12
+		},
+		tails: [{
+			x: 12,
+			y: 11
+		}],
+		inside() {
+			return (this.head.x >= 0 &&
+				this.head.x <= 24 &&
+				this.head.y >= 0 &&
+				this.head.y <= 24);
+		},
+		grow_tail() {
+			this.size++;
+		},
+		eated_apple(apple) {
+			return (this.head.x == apple.position.x &&
+				this.head.y == apple.position.y);
+		},
+		eated_tail() {
+			for (a = 0; a < this.tails.length; a++)
+				if (this.head.x == this.tails[a].x &&
+					this.head.y == this.tails[a].y) {
+					return true;
+				}
+			return false;
+		},
+		move() {
+			let size = this.tails.length;
+			if (this.size > this.tails.length) {
+				this.tails[size] = {
+					x: this.tails[size - 1].x,
+					y: this.tails[size - 1].y
+				};
+			}
+			for (let a = size - 1; a > 0; a--) {
+				this.tails[a].x = this.tails[a - 1].x;
+				this.tails[a].y = this.tails[a - 1].y;
+			}
+			this.tails[0].x = this.head.x;
+			this.tails[0].y = this.head.y;
+			this.head.x += this.direction[this.dir_now].x;
+			this.head.y += this.direction[this.dir_now].y;
+			if (this.head.x > 24) {
+				this.head.x -= 25
+			}
+			if (this.head.y > 24) {
+				this.head.y -= 25
+			}
+			if (this.head.x < 0) {
+				this.head.x += 25
+			}
+			if (this.head.y < 0) {
+				this.head.y += 25
+			}
+			this.moved = true;
+		},
+		draw() {
+			ctx.fillStyle = "#aaa";
+			for (let a = 0; a < this.tails.length; a++) {
+				ctx.fillRect(20 * this.tails[a].x, 20 * this.tails[a].y, 20, 20);
+			}
+			ctx.fillStyle = "#00ff00";
+			ctx.fillRect(this.head.x * 20, this.head.y * 20, 20, 20);
+		}
+	},
+
+	Apple = {
+		position: {
+			x: 6,
+			y: 6
+		},
+		reload(snake) {
+			let founded = false
+			while (!founded) {
+				founded = true;
+				this.position.x = Math.round(0.5 + Math.random() * 21);
+				this.position.y = Math.round(0.5 + Math.random() * 21);
+				for(let a = 0; a < snake.tails.length; a++) {
+					if (this.position.x == snake.tails[a].x &&
+						this.position.y == snake.tails[a].y) {
+						founded = false;
+						break;
+					}
+				}
+			}
+			
+		},
+		draw() {
+			ctx.fillStyle = "#ff0000";
+			ctx.fillRect(20 * this.position.x, 20 * this.position.y, 20, 20);
+		}
+	};
+
+cnv.width = 500;
+cnv.height = 500;
+ctx.font = "30px Arial";
+
+document.addEventListener('keydown', (e) => {
+	//console.log(e.keyCode);
+	switch (e.keyCode) {
+		case 37:
+		case 100:
+			if (Snake.dir_now != 2 && Snake.moved) {
+				Snake.dir_now = 0;
+				Snake.moved = false;
+			}
+			break;
+		case 38:
+		case 104:
+			if (Snake.dir_now != 3 && Snake.moved) {
+				Snake.dir_now = 1;
+				Snake.moved = false;
+			}
+			break;
+		case 39:
+		case 102:
+			if (Snake.dir_now != 0 && Snake.moved) {
+				Snake.dir_now = 2;
+				Snake.moved = false;
+			}
+			break;
+		case 40:
+		case 98:
+			if (Snake.dir_now != 1 && Snake.moved) {
+				Snake.dir_now = 3;
+				Snake.moved = false;
+			}
+			break;
+		default:
+			break;
+	}
+});
+
+const game = setInterval(() => {
+	ctx.fillStyle = "#000";
+	ctx.fillRect(0, 0, 500, 500);
+	Apple.draw();
+	Snake.move();
+	if (Snake.eated_tail() || !Snake.inside()) {
+		clearInterval(game);
+	}
+	Snake.draw();
+
+	if (Snake.eated_apple(Apple)) {
+		Apple.reload(Snake);
+		Snake.grow_tail();
+		Snake.score++;
+	}
+
+	ctx.fillText(Snake.score, 10, 40);
+}, 600);
+</script>
